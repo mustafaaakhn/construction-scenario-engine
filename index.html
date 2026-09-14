@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#b9522d" />
+    <meta name="description" content="Compare costs, profit and cash needs for a construction project." />
+    <title>Construction Calculator</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23b9522d'/%3E%3Cpath d='M10 29V17l10-7 10 7v12M16 29V19h8v10' fill='none' stroke='white' stroke-width='2.5'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main"><span data-i18n>Skip to content</span></a>
+
+    <main id="main" class="container">
+      <div class="intro">
+        <div>
+          <p class="eyebrow" data-i18n>COSTS &amp; CASH FLOW</p>
+          <h1><span data-i18n>Construction Calculator</span></h1>
+          <p><span data-i18n>Plan the costs. Try a few scenarios. See how the numbers change.</span></p>
+        </div>
+        <div class="project-actions">
+          <button id="import-project" class="button secondary" type="button"><span data-i18n>Open file</span></button>
+          <button id="export-project" class="button secondary" type="button"><span data-i18n>Save file</span></button>
+          <button id="load-example" class="text-button muted" type="button"><span data-i18n>Load example</span></button>
+          <input id="project-file" type="file" accept=".json,application/json" hidden />
+        </div>
+      </div>
+      <div class="currency-controls">
+        <label for="language"><span data-i18n>Language</span></label>
+        <select id="language"><option value="en" selected>English</option><option value="tr">Türkçe</option></select>
+        <label for="currency"><span data-i18n>Currency</span></label>
+        <select id="currency" aria-describedby="currency-note">
+          <option value="EUR" selected>Euro (EUR)</option>
+          <option value="USD" data-i18n>US dollar (USD)</option>
+          <option value="TL" data-i18n>Turkish lira (TL)</option>
+        </select>
+        <p id="currency-note" class="hint"><span data-i18n>Changes the currency label only. No exchange rate conversion.</span></p>
+      </div>
+      <p id="page-note" class="page-note" role="status"><span data-i18n>Enter the details and monthly plan for a new project.</span></p>
+
+      <form id="project-form" novalidate>
+        <div class="workspace">
+          <section class="panel" id="project-info" aria-labelledby="project-heading">
+            <div class="panel-heading"><span class="step">01</span><h2 id="project-heading"><span data-i18n>Project details</span></h2></div>
+            <div class="fields">
+              <label for="name"><span data-i18n>Project name</span><input id="name" name="name" maxlength="100" placeholder="e.g. Housing project" required /></label>
+              <label for="contractValue"><span data-i18n>Contract value</span><span class="input-unit"><input id="contractValue" name="contractValue" type="text" inputmode="decimal" data-money maxlength="100" required /><span data-currency>EUR</span></span></label>
+              <div class="field-pair">
+                <label for="duration"><span data-i18n>Work duration</span><span class="input-unit"><input id="duration" name="duration" type="number" min="1" max="120" step="1" required /><span><span data-i18n>mo</span></span></span></label>
+                <label for="paymentDelay"><span data-i18n>Payment delay</span><span class="input-unit"><input id="paymentDelay" name="paymentDelay" type="number" min="0" max="120" step="1" required /><span><span data-i18n>mo</span></span></span></label>
+              </div>
+              <label for="initialCash"><span data-i18n>Starting cash</span><span class="input-unit"><input id="initialCash" name="initialCash" type="text" inputmode="decimal" data-money maxlength="100" required /><span data-currency>EUR</span></span></label>
+              <div class="field-pair">
+                <label for="monthlyOverhead"><span data-i18n>Monthly overhead</span><span class="input-unit"><input id="monthlyOverhead" name="monthlyOverhead" type="text" inputmode="decimal" data-money maxlength="100" required /><span data-currency>EUR</span></span></label>
+                <label for="monthlyRate"><span data-i18n>Monthly loan interest</span><span class="input-unit"><input id="monthlyRate" name="monthlyRate" type="number" min="0" max="100" step="0.01" required /><span>%</span></span></label>
+              </div>
+              <p class="hint"><span data-i18n>Overhead is added each working month. Do not add it again in the cost columns. Dots separate thousands; use a comma for cents.</span></p>
+            </div>
+          </section>
+
+          <details open class="panel fold-panel plan-panel" id="monthly-plan" aria-labelledby="plan-heading">
+            <summary class="panel-heading"><span class="step">02</span><h2 id="plan-heading"><span data-i18n>Monthly plan</span></h2><span class="unit-label"><span data-i18n>All amounts in </span><span data-currency>EUR</span></span></summary>
+            <div class="plan-toolbar"><p><span data-i18n>Enter the amount billed and costs for each month.</span></p><button id="distribute" class="text-button" type="button"><span data-i18n>Split billing evenly</span></button></div>
+            <div class="item-toolbar">
+              <label for="item-name"><span data-i18n>New cost item</span><input id="item-name" maxlength="40" placeholder="e.g. Transport" /></label>
+              <button id="add-item" class="button secondary" type="button"><span data-i18n>+ Add item</span></button>
+            </div>
+            <p id="item-status" class="hint item-status" role="status"><span data-i18n>Add your own costs. Use × in a column heading to remove an item.</span></p>
+            <div class="table-scroll" tabindex="0" role="region" aria-label="Editable monthly plan">
+              <table class="plan-table">
+                <caption class="sr-only"><span data-i18n>Monthly billing and costs, </span><span data-currency>EUR</span></caption>
+                <thead><tr id="plan-head"></tr></thead>
+                <tbody id="plan-rows"></tbody>
+                <tfoot><tr id="plan-foot"></tr></tfoot>
+              </table>
+            </div>
+            <div class="plan-summary"><span id="claim-check" role="status"></span><p><span data-i18n>Billed is the value of work done that month. Payment arrives later if a delay is set.</span></p></div>
+          </details>
+        </div>
+        <section class="panel scenario-panel" id="scenario-settings" aria-labelledby="scenario-heading">
+          <div class="panel-heading"><span class="step">03</span><h2 id="scenario-heading"><span data-i18n>What if things change?</span></h2><div class="scenario-actions"><button id="stress-example" class="text-button" type="button"><span data-i18n>Try stress example</span></button><button id="reset-scenario" class="text-button muted" type="button"><span data-i18n>Reset fields</span></button></div></div>
+          <div class="scenario-body">
+            <p class="scenario-intro"><span data-i18n>Set the changes, give the scenario a name and add it to the comparison. Then try another combination. Leave unchanged fields at 0. Use a negative percentage for lower costs.</span></p>
+            <div class="scenario-fields">
+              <div id="cost-changes" class="cost-changes"></div>
+              <label for="extraDelay"><span data-i18n>Extra payment delay</span><span class="input-unit"><input id="extraDelay" name="extraDelay" type="number" min="0" max="120" step="1" value="0" required /><span><span data-i18n>mo</span></span></span></label>
+              <label for="extraMonths"><span data-i18n>Extra work months</span><span class="input-unit"><input id="extraMonths" name="extraMonths" type="number" min="0" max="119" step="1" value="0" required /><span><span data-i18n>mo</span></span></span></label>
+            </div>
+            <div class="scenario-save">
+              <label for="scenario-name"><span data-i18n>Scenario name </span><span class="muted"><span data-i18n>(optional)</span></span><input id="scenario-name" maxlength="60" placeholder="e.g. Steel + labour" /></label>
+              <button id="add-scenario" class="button secondary" type="button"><span data-i18n>Add to comparison</span></button>
+              <span id="scenario-count" class="hint"></span>
+            </div>
+            <p id="scenario-status" class="hint" role="status"></p>
+            <ul id="saved-scenarios" class="saved-scenarios" aria-label="Saved scenarios"></ul>
+            <p class="hint scenario-note"><span data-i18n>Changes apply to the whole project. Extra delay is added to the base delay. Extra months spread the same work over a longer period and add more overhead. Labour costs only change with the percentage you enter.</span></p>
+          </div>
+        </section>
+        <div id="error" class="error" role="alert" hidden></div>
+        <div class="form-actions"><p id="save-status" role="status"><span data-i18n>Setting up local save.</span></p><div><button id="clear" class="text-button muted" type="button"><span data-i18n>Clear form</span></button><button id="calculate-project" class="button primary" type="submit"><span class="spinner" aria-hidden="true"></span><span data-i18n>Calculate project </span><span aria-hidden="true">→</span></button></div></div>
+      </form>
+
+      <section id="results-section" aria-labelledby="results-heading">
+        <div class="section-heading"><div><p id="result-caption" class="eyebrow"><span data-i18n>BASE CASE</span></p><h2 id="results-heading"><span data-i18n>Project summary</span></h2></div><span id="result-name" class="result-name"></span></div>
+        <p id="result-status" class="sr-only" role="status"></p>
+        <div id="result-placeholder" class="placeholder" hidden><span data-i18n>Inputs changed. Click Calculate project to update the results.</span></div>
+        <div id="results" hidden>
+          <div class="detail-toolbar summary-select"><label for="detail-view"><span data-i18n>Summary and monthly details</span></label><select id="detail-view"></select><span class="hint"><span data-i18n>The comparison table includes every scenario. Use the chart buttons to show or hide lines.</span></span></div>
+          <div class="metrics">
+            <article class="metric profit-card"><h3><span data-i18n>Profit before tax</span></h3><strong id="profit"></strong><p><span data-i18n>After costs and loan interest</span></p></article>
+            <article class="metric"><h3><span data-i18n>Profit margin</span></h3><strong id="margin"></strong><p><span data-i18n>As a share of the contract value</span></p></article>
+            <article class="metric"><h3><span data-i18n>Peak borrowing</span></h3><strong id="max-debt"></strong><p id="worst-month"></p></article>
+            <article class="metric"><h3><span data-i18n>Loan interest cost</span></h3><strong id="finance-cost"></strong><p><span data-i18n>Total interest over the project</span></p></article>
+          </div>
+          <details open id="comparison" class="panel fold-panel comparison" aria-labelledby="comparison-heading" hidden>
+            <summary class="comparison-heading"><h3 id="comparison-heading"><span data-i18n>Compare scenarios</span></h3><p id="scenario-impact"></p></summary>
+            <div class="table-scroll" tabindex="0" role="region" aria-label="Base and scenario comparison"><table class="comparison-table"><caption class="sr-only"><span data-i18n>Base and saved scenario results</span></caption><thead><tr id="comparison-head"></tr></thead><tbody id="comparison-rows"></tbody></table></div>
+            <p class="hint comparison-note"><span data-i18n>Small numbers show the change from the base case. Each result ends at its own final payment month. Margin changes are in percentage points. A dash means no borrowing was needed.</span></p>
+          </details>
+          <details class="panel fold-panel threshold-panel" aria-labelledby="threshold-heading">
+            <summary class="panel-heading"><span class="step">04</span><h2 id="threshold-heading"><span data-i18n>Project limits</span></h2></summary>
+            <div class="threshold-body">
+              <p class="scenario-intro"><span data-i18n>How far can one thing change before the base project misses a target? Each check changes only one input.</span></p>
+              <form id="threshold-form" class="threshold-controls">
+                <label for="limit-item"><span data-i18n>Cost item to check</span><select id="limit-item"></select></label><label for="target-margin"><span data-i18n>Minimum profit margin</span><span class="input-unit"><input id="target-margin" type="number" min="0" max="100" step="0.01" value="10" required /><span>%</span></span></label>
+                <label for="credit-limit"><span data-i18n>Borrowing limit</span><span class="input-unit"><input id="credit-limit" type="text" inputmode="decimal" data-money maxlength="100" value="1.000.000" required /><span data-currency>EUR</span></span></label>
+                <button class="button secondary" type="submit"><span data-i18n>Check limits</span></button>
+              </form>
+              <p id="threshold-status" class="hint" role="status"></p>
+              <div id="threshold-results" class="threshold-cards" hidden>
+                <article id="cost-limit-card"><h3 id="cost-limit-heading"></h3><strong id="cost-limit-value"></strong><p id="cost-limit-detail"></p></article>
+                <article><h3><span data-i18n>Extra months → low margin</span></h3><strong id="duration-limit-value"></strong><p id="duration-limit-detail"></p></article>
+                <article><h3><span data-i18n>Payment delay → borrowing limit</span></h3><strong id="delay-limit-value"></strong><p id="delay-limit-detail"></p></article>
+              </div>
+              <p class="hint threshold-note"><span data-i18n>The selected cost item is checked from 0% to 1.000% in 0,01-point steps. Time and delay are checked in whole months. Matching a target is not a breach. These limits depend on your inputs.</span></p>
+            </div>
+          </details>
+          <div class="result-grid">
+            <section class="panel chart-panel" aria-labelledby="chart-heading"><div class="chart-heading"><h3 id="chart-heading"><span data-i18n>Monthly cash balance</span></h3><div id="chart-legend" class="chart-legend" role="group" aria-label="Chart lines"></div></div><div class="chart-wrap"><canvas id="cash-chart" role="img" aria-label="Month-end cash balance for the base case and scenarios. Use the buttons above to show or hide lines. Exact values are in the monthly details below."></canvas><p id="chart-empty" class="chart-empty" role="status" hidden><span data-i18n>All lines are hidden. Click a name above to show one.</span></p></div><p class="hint"><span data-i18n>Below zero means borrowing. Each line stops at its final payment month. Click a name above to show or hide its line. Hover over the chart for exact values.</span></p></section>
+            <details class="panel breakdown fold-panel" open><summary><h3 id="breakdown-heading"><span data-i18n>Cost breakdown</span></h3></summary><div class="breakdown-body"><dl><div><dt><span data-i18n>Contract income</span></dt><dd id="revenue"></dd></div><div><dt><span data-i18n>Work costs and overhead</span></dt><dd id="total-costs"></dd></div><div><dt><span data-i18n>Loan interest</span></dt><dd id="breakdown-finance"></dd></div><div class="breakdown-total"><dt><span data-i18n>Profit before tax</span></dt><dd id="breakdown-profit"></dd></div></dl><div class="closing"><span><span data-i18n>Final cash / debt</span></span><strong id="final-balance"></strong><p><span data-i18n>Includes starting cash.</span></p></div></div></details>
+          </div>
+          <details class="panel cash-details"><summary><span data-i18n>Monthly details </span><span><span data-i18n>Billing, payments, costs and interest</span></span></summary><p class="hint cash-note"><span data-i18n>Choose which result to view using Summary and monthly details above.</span></p><div class="table-scroll" tabindex="0" role="region" aria-label="Monthly results"><table class="cash-table"><caption id="cash-caption">Monthly results for the selected case, EUR</caption><thead><tr><th scope="col"><span data-i18n>Month</span></th><th scope="col"><span data-i18n>Billed</span></th><th scope="col"><span data-i18n>Received</span></th><th scope="col"><span data-i18n>Costs</span></th><th scope="col"><span data-i18n>Interest</span></th><th scope="col"><span data-i18n>Cash / debt</span></th></tr></thead><tbody id="cash-rows"></tbody></table></div></details>
+        </div>
+      </section>
+
+      <details class="assumptions"><summary><span data-i18n>How does this calculation work?</span></summary><ul><li><span data-i18n>Cash is checked at the end of each month. Short cash gaps within a month are not included.</span></li><li><span data-i18n>Interest is charged on debt at the start of the month. Unpaid interest adds to the debt.</span></li><li><span data-i18n>Overhead stops when the work ends. The calculation runs until the last scheduled payment. Interest after that date is not included.</span></li><li><span data-i18n>Starting cash reduces borrowing but does not add to profit. The model assumes borrowing is available when needed.</span></li><li><span data-i18n>Scenarios apply from the start of the project. Materials already bought are not tracked separately. Cost changes apply once, not every month.</span></li><li><span data-i18n>Extra months mean slower progress. A 2-month plan stretched to 4 months spreads each old month over two new months. Work and contract value stay the same, but overhead continues. Change the labour percentage if needed.</span></li><li><span data-i18n>Tax, deductions and price adjustment payments are not included. Results depend on the plan you enter.</span></li></ul></details>
+    </main>
+    <noscript><span data-i18n>Enable JavaScript in your browser to use this calculator.</span></noscript>
+    <script src="./vendor/chart.umd.js"></script>
+    <script src="./language.js"></script>
+    <script src="./items.js"></script>
+    <script src="./calculator.js"></script>
+    <script src="./scenario.js"></script>
+    <script src="./thresholds.js"></script>
+    <script src="./amounts.js"></script>
+    <script src="./storage.js"></script>
+    <script src="./sample.js"></script>
+    <script src="./main.js"></script>
+  </body>
+</html>
